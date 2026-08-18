@@ -1774,7 +1774,7 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                 final filename = TextEditingController();
                 final url = TextEditingController();
                 final urlFocus = FocusNode();
-                FilePickerResult? result;
+                PlatformFile? result;
                 String? validateFailed;
                 await showDialog(
                     context: context,
@@ -1806,15 +1806,15 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                                 padding: const EdgeInsets.only(left: 5, right: 5),
                                                 elevation: 0.0),
                                             onPressed: () async {
-                                              result = await FilePicker.pickFiles(
+                                              result = await FilePicker.pickFile(
                                                 type: FileType.image,
-                                                withData: true,
+                                                // withData: true,
                                                 allowedExtensions:
                                                     widget.htmlToolbarOptions.imageExtensions,
                                               );
-                                              if (result?.files.single.name != null) {
+                                              if (result?.name != null) {
                                                 setState(() {
-                                                  filename.text = result!.files.single.name;
+                                                  filename.text = result!.name;
                                                 });
                                               }
                                             },
@@ -1878,25 +1878,31 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                       validateFailed =
                                           'Please input either an image or an image URL, not both!';
                                     });
-                                  } else if (filename.text.isNotEmpty &&
-                                      result?.files.single.bytes != null) {
-                                    var base64Data = base64.encode(result!.files.single.bytes!);
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaUploadInterceptor
-                                            ?.call(result!.files.single, InsertFileType.image) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller.insertHtml(
-                                          "<img src='data:image/${result!.files.single.extension};base64,$base64Data' data-filename='${result!.files.single.name}'/>");
-                                    }
-                                    Navigator.of(context).pop();
                                   } else {
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaLinkInsertInterceptor
-                                            ?.call(url.text, InsertFileType.image) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller.insertNetworkImage(url.text);
+                                    Uint8List? byteData;
+                                    if (filename.text.isNotEmpty) {
+                                      byteData = await result?.readAsBytes();
+                                      if (byteData != null) {
+                                        var base64Data = base64.encode(byteData);
+                                        var proceed = await widget
+                                            .htmlToolbarOptions
+                                            .mediaUploadInterceptor
+                                            ?.call(result!, InsertFileType.image) ??
+                                            true;
+                                        if (proceed) {
+                                          widget.controller.insertHtml(
+                                              "<img src='data:${result!.xFile.mimeType};base64,$base64Data' data-filename='${result!.name}'/>");
+                                        }
+                                      }
+                                    }
+                                    if (filename.text.isEmpty || byteData == null) {
+                                      var proceed = await widget
+                                          .htmlToolbarOptions.mediaLinkInsertInterceptor
+                                          ?.call(url.text, InsertFileType.image) ??
+                                          true;
+                                      if (proceed) {
+                                        widget.controller.insertNetworkImage(url.text);
+                                      }
                                     }
                                     Navigator.of(context).pop();
                                   }
@@ -1918,7 +1924,7 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                 final filename = TextEditingController();
                 final url = TextEditingController();
                 final urlFocus = FocusNode();
-                FilePickerResult? result;
+                PlatformFile? result;
                 String? validateFailed;
                 await showDialog(
                     context: context,
@@ -1947,15 +1953,14 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                               padding: const EdgeInsets.only(left: 5, right: 5),
                                               elevation: 0.0),
                                           onPressed: () async {
-                                            result = await FilePicker.pickFiles(
+                                            result = await FilePicker.pickFile(
                                               type: FileType.audio,
-                                              withData: true,
                                               allowedExtensions:
                                                   widget.htmlToolbarOptions.audioExtensions,
                                             );
-                                            if (result?.files.single.name != null) {
+                                            if (result?.name != null) {
                                               setState(() {
-                                                filename.text = result!.files.single.name;
+                                                filename.text = result!.name;
                                               });
                                             }
                                           },
@@ -2014,26 +2019,32 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                       validateFailed =
                                           'Please input either an audio file or an audio URL, not both!';
                                     });
-                                  } else if (filename.text.isNotEmpty &&
-                                      result?.files.single.bytes != null) {
-                                    var base64Data = base64.encode(result!.files.single.bytes!);
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaUploadInterceptor
-                                            ?.call(result!.files.single, InsertFileType.audio) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller.insertHtml(
-                                          "<audio controls src='data:audio/${result!.files.single.extension};base64,$base64Data' data-filename='${result!.files.single.name}'></audio>");
-                                    }
-                                    Navigator.of(context).pop();
                                   } else {
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaLinkInsertInterceptor
-                                            ?.call(url.text, InsertFileType.audio) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller
-                                          .insertHtml("<audio controls src='${url.text}'></audio>");
+                                    Uint8List? byteData;
+                                    if (filename.text.isNotEmpty) {
+                                      byteData = await result?.readAsBytes();
+                                      if (byteData != null) {
+                                        var base64Data = base64.encode(byteData);
+                                        var proceed = await widget
+                                            .htmlToolbarOptions
+                                            .mediaUploadInterceptor
+                                            ?.call(result!, InsertFileType.audio) ??
+                                            true;
+                                        if (proceed) {
+                                          widget.controller.insertHtml(
+                                              "<audio controls src='data:${result!.xFile.mimeType};base64,$base64Data' data-filename='${result!.name}'></audio>");
+                                        }
+                                      }
+                                    }
+                                    if (filename.text.isEmpty || byteData == null) {
+                                      var proceed = await widget
+                                          .htmlToolbarOptions.mediaLinkInsertInterceptor
+                                          ?.call(url.text, InsertFileType.audio) ??
+                                          true;
+                                      if (proceed) {
+                                        widget.controller
+                                            .insertHtml("<audio controls src='${url.text}'></audio>");
+                                      }
                                     }
                                     Navigator.of(context).pop();
                                   }
@@ -2055,7 +2066,7 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                 final filename = TextEditingController();
                 final url = TextEditingController();
                 final urlFocus = FocusNode();
-                FilePickerResult? result;
+                PlatformFile? result;
                 String? validateFailed;
                 await showDialog(
                     context: context,
@@ -2084,15 +2095,14 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                               padding: const EdgeInsets.only(left: 5, right: 5),
                                               elevation: 0.0),
                                           onPressed: () async {
-                                            result = await FilePicker.pickFiles(
+                                            result = await FilePicker.pickFile(
                                               type: FileType.video,
-                                              withData: true,
                                               allowedExtensions:
                                                   widget.htmlToolbarOptions.videoExtensions,
                                             );
-                                            if (result?.files.single.name != null) {
+                                            if (result?.name != null) {
                                               setState(() {
-                                                filename.text = result!.files.single.name;
+                                                filename.text = result!.name;
                                               });
                                             }
                                           },
@@ -2151,26 +2161,37 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                       validateFailed =
                                           'Please input either a video or a video URL, not both!';
                                     });
-                                  } else if (filename.text.isNotEmpty &&
-                                      result?.files.single.bytes != null) {
-                                    var base64Data = base64.encode(result!.files.single.bytes!);
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaUploadInterceptor
-                                            ?.call(result!.files.single, InsertFileType.video) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller.insertHtml(
-                                          "<video controls src='data:video/${result!.files.single.extension};base64,$base64Data' data-filename='${result!.files.single.name}'></video>");
-                                    }
-                                    Navigator.of(context).pop();
                                   } else {
-                                    var proceed = await widget
-                                            .htmlToolbarOptions.mediaLinkInsertInterceptor
-                                            ?.call(url.text, InsertFileType.video) ??
-                                        true;
-                                    if (proceed) {
-                                      widget.controller
-                                          .insertHtml("<video controls src='${url.text}'></video>");
+                                    Uint8List? byteData;
+                                    if (filename.text.isNotEmpty) {
+                                      byteData = await result?.readAsBytes();
+                                      if (byteData != null) {
+                                        var base64Data = base64.encode(
+                                            byteData);
+                                        var proceed = await widget
+                                            .htmlToolbarOptions
+                                            .mediaUploadInterceptor
+                                            ?.call(result!,
+                                            InsertFileType.video) ??
+                                            true;
+                                        if (proceed) {
+                                          widget.controller.insertHtml(
+                                              "<video controls src='data:${result!
+                                                  .xFile
+                                                  .mimeType};base64,$base64Data' data-filename='${result!
+                                                  .name}'></video>");
+                                        }
+                                      }
+                                    }
+                                    if (filename.text.isEmpty || byteData == null) {
+                                      var proceed = await widget
+                                          .htmlToolbarOptions.mediaLinkInsertInterceptor
+                                          ?.call(url.text, InsertFileType.video) ??
+                                          true;
+                                      if (proceed) {
+                                        widget.controller
+                                            .insertHtml("<video controls src='${url.text}'></video>");
+                                      }
                                     }
                                     Navigator.of(context).pop();
                                   }
@@ -2192,7 +2213,7 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                 final filename = TextEditingController();
                 final url = TextEditingController();
                 final urlFocus = FocusNode();
-                FilePickerResult? result;
+                PlatformFile? result;
                 String? validateFailed;
                 await showDialog(
                     context: context,
@@ -2221,15 +2242,14 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                               padding: const EdgeInsets.only(left: 5, right: 5),
                                               elevation: 0.0),
                                           onPressed: () async {
-                                            result = await FilePicker.pickFiles(
+                                            result = await FilePicker.pickFile(
                                               type: FileType.any,
-                                              withData: true,
                                               allowedExtensions:
                                                   widget.htmlToolbarOptions.otherFileExtensions,
                                             );
-                                            if (result?.files.single.name != null) {
+                                            if (result?.name != null) {
                                               setState(() {
-                                                filename.text = result!.files.single.name;
+                                                filename.text = result!.name;
                                               });
                                             }
                                           },
@@ -2277,7 +2297,7 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   if (filename.text.isEmpty && url.text.isEmpty) {
                                     setState(() {
                                       validateFailed =
@@ -2288,13 +2308,19 @@ class ToolbarWidgetState extends State<ToolbarWidget> {
                                       validateFailed =
                                           'Please input either a file or a file URL, not both!';
                                     });
-                                  } else if (filename.text.isNotEmpty &&
-                                      result?.files.single.bytes != null) {
-                                    widget.htmlToolbarOptions.onOtherFileUpload
-                                        ?.call(result!.files.single);
-                                    Navigator.of(context).pop();
                                   } else {
-                                    widget.htmlToolbarOptions.onOtherFileLinkInsert?.call(url.text);
+                                    Uint8List? byteData;
+                                    if (filename.text.isNotEmpty) {
+                                      byteData = await result?.readAsBytes();
+                                      if (byteData != null) {
+                                        widget.htmlToolbarOptions
+                                            .onOtherFileUpload
+                                            ?.call(result!);
+                                      }
+                                    }
+                                    if (filename.text.isEmpty || byteData == null) {
+                                      widget.htmlToolbarOptions.onOtherFileLinkInsert?.call(url.text);
+                                    }
                                     Navigator.of(context).pop();
                                   }
                                 },

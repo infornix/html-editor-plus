@@ -2,7 +2,7 @@ name: html_editor_plus
 description: HTML rich text editor for Android, iOS, and Web, using the
   Summernote library. Enhanced with highly customizable widget-based controls,
   bug fixes, callbacks, dark mode, and more.
-version: 0.0.7
+version: 0.0.8
 homepage: https://github.com/vadrian89/html-editor-plus
 
 environment:
@@ -11,7 +11,7 @@ environment:
 
 dependencies:
   equatable: ^2.0.5
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0
   flex_color_picker: "3.7.1"
   flutter:
     sdk: flutter
